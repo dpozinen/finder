@@ -3,10 +3,13 @@ package finder.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Data
+
 @AllArgsConstructor
-public class Page
-{
+public @Data class Page {
+
+	private Long id;
 	private final String url;
+	private final Long level;
+	private long urlsFound;
 
 }
