@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Finder</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="/main.js"></script>
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript. Please enable Javascript and reload this page!</h2></noscript>
+<div id="main-content" class="container">
+    <div class="row">
+        <p>
+            Current progress
+        </p>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="table" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Level</th>
+                    <th>Url</th>
+                    <th>Urls found</th>
+                </tr>
+                </thead>
+                <tbody id="pages">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+$( document ).ready(function() {
+    prepare();
+});
+</script>
+</html>

@@ -15,32 +15,19 @@ function connect() {
     });
 }
 
-function sendName() {
-    stompClient.send("/app/hello", {}, $("#name").val() );
-}
-
-function refreshTable(message) {
+function refreshTable(page) {
     var v = `
         <tr>
             <td>
-                LOOOOL
+                ${page.url}
             </td>
             <td>
-                LOOOOL
+                ${page.urlsFound}
             </td>
             <td>
-                LOOOOL
+                ${page.level}
             </td>
         </tr>
     `;
     $("#greetings").append(v);
 }
-
-$(function () {
-    $("form").on('submit', function (e) {
-        e.preventDefault();
-    });
-    $( "#connect" ).click(function() { connect(); });
-    $( "#disconnect" ).click(function() { disconnect(); });
-    $( "#send" ).click(function() { sendName(); });
-});
