@@ -16,21 +16,29 @@ function connect() {
 }
 
 function refreshTable(pages) {
-    $.each(pages, function(i, page) {
-        var v = `
+    var html = $.map(pages, function(page, i) {
+        return `
             <tr>
                 <td>
                     ${page.url}
                 </td>
                 <td>
-                    ${page.urlsFound}
+                    ${page.level}
                 </td>
                 <td>
-                    ${page.level}
+                    ${getStatus(page)}
                 </td>
             </tr>
         `;
-        $("#pages").append(v);
-    });
+    }).join("");
+    $('#pages').html(html);
+}
 
+function getStatus(page) {
+    var status = page.status;
+    if (status == 'ERROR') {
+        return page.errorMsg;
+    } else {
+        return status;
+    }
 }
