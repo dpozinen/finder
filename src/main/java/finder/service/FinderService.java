@@ -1,30 +1,31 @@
 package finder.service;
 
 import finder.model.Page;
+import finder.repo.PageRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 @Service
 public class FinderService {
 
+	@Autowired
+	private PageRepo repo;
+
 	public Set<Page> update() {
-		return Set.of(new Page(1L, "32", 1L, 3));
+		return repo.pages;
 	}
 
-	public boolean find(Map<String, String> form) {
+	public void find(Map<String, String> form) {
 		var threads = form.get("threads");
 		var url = form.get("url");
 		var find = form.get("find");
+		var maxUrls = form.get("maxUrls");
 
-		if ( threads == null || url == null || find == null || !threads.matches("\\d+")) {
-			return false;
-		} else {
-			Finder.Input input = new Finder.Input(find, url, Short.parseShort(threads));
-			return new Finder(input).find();
-		}
+		Finder.Input input = new Finder.Input(find, url, Short.parseShort(threads), Short.parseShort(maxUrls));
+		new Finder(input, repo).find();
 	}
 
 }
