@@ -55,7 +55,7 @@ public final @Data class Page {
 		try {
 			var uri = new URI(url);
 			if (!uri.isAbsolute())
-				url = new URI("https://" + domain + "/" + (url.startsWith("/") ? url : "/"+url)).toString();
+				url = new URI("https://" + domain + (url.startsWith("/") ? url : "/"+url)).toString();
 		} catch (URISyntaxException e) {
 			status = Status.ERROR;
 			errorMsg = "Malformed url";
