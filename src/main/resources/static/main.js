@@ -15,19 +15,22 @@ function connect() {
     });
 }
 
-function refreshTable(page) {
-    var v = `
-        <tr>
-            <td>
-                ${page.url}
-            </td>
-            <td>
-                ${page.urlsFound}
-            </td>
-            <td>
-                ${page.level}
-            </td>
-        </tr>
-    `;
-    $("#greetings").append(v);
+function refreshTable(pages) {
+    $.each(pages, function(i, page) {
+        var v = `
+            <tr>
+                <td>
+                    ${page.url}
+                </td>
+                <td>
+                    ${page.urlsFound}
+                </td>
+                <td>
+                    ${page.level}
+                </td>
+            </tr>
+        `;
+        $("#pages").append(v);
+    });
+
 }
