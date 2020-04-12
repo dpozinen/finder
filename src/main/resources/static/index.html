@@ -11,14 +11,30 @@
 </head>
 <body>
 <noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript. Please enable Javascript and reload this page!</h2></noscript>
-<div id="main-content" class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <form action="" id="query" onsubmit="query(event);">
-                <input type="text" name="url" required placeholder="Starting url">
-                <input type="number" name="threads" required placeholder="Max Threads" max="10">
-                <input type="text" name="searchText" required placeholder="Search Text" maxlength="100">
-                <input type="submit">
+<div class="container my-5">
+    <div class="row my-4">
+        <div id="err" class="col text-center text-danger" style="display: none;">
+            Invalid input
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <form action="" id="query" class="form" onsubmit="query(event);">
+                <div class="form-group">
+                    <label for="url">Starting url</label>
+                    <input class="form-control" type="url" name="url" id="url" required placeholder="Starting url">
+                </div>
+                <div class="form-group">
+                    <label for="threads">Max Threads</label>
+                    <input class="form-control" type="number" name="threads" id="threads" required placeholder="Max Threads" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="find">Search Text</label>
+                    <input class="form-control" type="text" name="find" id="find" required placeholder="Search Text" maxlength="100">
+                </div>
+                <center>
+                    <input class="btn btn-primary" type="submit">
+                </center>
             </form>
         </div>
     </div>
@@ -42,10 +58,11 @@ function query(e) {
                 window.location.replace('/find.html');
             },
             error: function(data) {
-                window.refresh();
+                $('#err').show();
             }
     });
 
 }
+
 </script>
 </html>
