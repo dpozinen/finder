@@ -4,13 +4,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Collector;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 public final @Data class Page {
@@ -22,9 +25,11 @@ public final @Data class Page {
 	private final Long level;
 	private Status status = Status.QUEUED;
 
-	private String content;
+	private volatile String content;
 	private int statusCode;
 	private String errorMsg;
+
+	private CountDownLatch responseReceivedSignal;
 
 	public Page(String url, String domain, long level) {
 		this.url = url;
@@ -32,15 +37,23 @@ public final @Data class Page {
 		this.level = level;
 	}
 
-	public void request() {
+	public void request(WebClient webClient) {
 		makeUrl();
-		content = WebClient.create(url).get().retrieve()
+		content = webClient.get().uri(url)
+						   .retrieve()
 						   .bodyToMono(String.class)
 						   .onErrorResume(WebClientResponseException.class,
 							   e -> {
 									statusCode = e.getRawStatusCode();
 									return Mono.justOrEmpty("");
 						   })
+						   .onErrorResume(DataBufferLimitException.class,
+							   e -> {
+								   statusCode = -1;
+								   errorMsg = "Response size too large";
+								   return Mono.justOrEmpty("");
+							   }
+						   )
 						   .onErrorResume(Exception.class,
 							   e -> {
 								   statusCode = -1;
@@ -49,6 +62,7 @@ public final @Data class Page {
 							   })
 						   .block();
 		if (statusCode == 0) statusCode = 200;
+		responseReceivedSignal.countDown();
 	}
 
 	private void makeUrl() {
@@ -72,7 +86,7 @@ public final @Data class Page {
 	}
 
 	public Set<Page> findUrls() {
-		if (content == null) return Set.of();
+		if (content == null) return new HashSet<>(Set.of());
 		return Jsoup.parse(content)
 					.select("a[href]").eachAttr("href").stream()
 					.filter(s -> !s.isBlank())
