@@ -12,19 +12,26 @@
 <body>
 <noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript. Please enable Javascript and reload this page!</h2></noscript>
 <div id="main-content" class="container">
-    <div class="row">
-        <p>
+    <div class="row my-4 justify-content-center">
+        <h3 class="text-monospace text-primary">
             Current progress
-        </p>
+        </h3>
+    </div>
+    <div class="row my-4 justify-content-start text-white">
+        <div class="col">
+            <button class="btn btn-primary" id="stop" onclick="stop();">Stop</button>
+            <button class="btn btn-primary" id="play" disabled onclick="play();">Play</button>
+            <button class="btn btn-primary" id="pause" onclick="pause();">Pause</button>
+        </div>
     </div>
     <div class="row">
         <div class="col-md-12">
             <table id="table" class="table table-striped">
                 <thead>
                 <tr>
-                    <th>Url</th>
-                    <th>Level</th>
-                    <th>Status</th>
+                    <th class="col-md-2">Url</th>
+                    <th class="col-md-2">Level</th>
+                    <th class="col-md-2">Status</th>
                 </tr>
                 </thead>
                 <tbody id="pages">
@@ -38,5 +45,23 @@
 $( document ).ready(function() {
     prepare();
 });
+
+function play() {
+    fixButtons(['#pause', '#stop'], ['#play']);
+}
+
+function stop() {
+    fixButtons(['#play'], ['#pause', '#stop']);
+}
+
+function pause() {
+    fixButtons(['#play'], ['#pause', '#stop']);
+}
+
+function fixButtons(toEnable, toDisable) {
+    toEnable.forEach(e => $(e).prop('disabled', false));
+    toDisable.forEach(e => $(e).prop('disabled', true));
+}
+
 </script>
 </html>
