@@ -22,19 +22,19 @@
             <form action="" id="query" class="form" onsubmit="query(event);">
                 <div class="form-group">
                     <label for="url">Starting url</label>
-                    <input class="form-control" type="url" name="url" id="url" required placeholder="Starting url">
+                    <input class="form-control" type="url" value="https://github.com/dpozinen" name="url" id="url" required placeholder="Starting url">
                 </div>
                 <div class="form-group">
                     <label for="threads">Max Threads</label>
-                    <input class="form-control" type="number" name="threads" id="threads" required placeholder="Max Threads" min="1" max="10">
+                    <input class="form-control" type="number" value="3" name="threads" id="threads" required placeholder="Max Threads" min="1" max="10">
                 </div>
                 <div class="form-group">
                     <label for="find">Search Text</label>
-                    <input class="form-control" type="text" name="find" id="find" required placeholder="Search Text" maxlength="100">
+                    <input class="form-control" type="text" value="dpozinen" name="find" id="find" required placeholder="Search Text" maxlength="100">
                 </div>
                 <div class="form-group">
                     <label for="find">Max Urls</label>
-                    <input class="form-control" type="number" name="maxUrls" id="maxUrls" required placeholder="Max Urls" min="1" max="1000">
+                    <input class="form-control" type="number" value="1000" name="maxUrls" id="maxUrls" required placeholder="Max Urls" min="1" max="1000">
                 </div>
                 <center>
                     <input class="btn btn-primary" type="submit">

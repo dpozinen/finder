@@ -42,3 +42,19 @@ function getStatus(page) {
         return status;
     }
 }
+
+function sendPause() {
+    stompClient.send("/finder/pause", {}, "");
+}
+
+function sendStop() {
+    stompClient.send("/finder/stop", {}, "");
+}
+
+function sendPlay() {
+    stompClient.send("/finder/play", {}, "");
+}
+
+function sendReset() {
+    stompClient.send("/finder/reset", {}, "");
+}

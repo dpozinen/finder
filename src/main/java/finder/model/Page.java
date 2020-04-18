@@ -1,5 +1,6 @@
 package finder.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jsoup.Jsoup;
@@ -25,6 +26,7 @@ public final @Data class Page {
 	private final Long level;
 	private Status status = Status.QUEUED;
 
+	@JsonIgnore
 	private volatile String content;
 	private int statusCode;
 	private String errorMsg;

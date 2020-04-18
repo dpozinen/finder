@@ -13,6 +13,7 @@ public class FinderService {
 
 	@Autowired
 	private PageRepo repo;
+	private Finder finder;
 
 	public Set<Page> update() {
 		return repo.pages;
@@ -25,7 +26,24 @@ public class FinderService {
 		var maxUrls = form.get("maxUrls");
 
 		Finder.Input input = new Finder.Input(find, url, Short.parseShort(threads), Short.parseShort(maxUrls));
-		new Finder(input, repo).find();
+		this.finder = new Finder(input, repo);
+		finder.find();
 	}
 
+	public void pause() {
+		finder.pause();
+	}
+
+	public void play() {
+		finder.play();
+	}
+
+	public void stop() {
+		finder.stop();
+	}
+
+	public void reset() {
+		stop();
+		finder.reset();
+	}
 }

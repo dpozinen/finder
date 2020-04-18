@@ -3,6 +3,7 @@ package finder.service;
 import finder.model.Page;
 import finder.model.Status;
 import finder.repo.PageRepo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class Finder {
 
 	private final PageRepo repo;
@@ -23,19 +25,22 @@ public class Finder {
 
 	private WebClient webClient;
 
+	private volatile CountDownLatch pauseRelease;
+	private volatile boolean stop;
+
 	public Finder(Input input, PageRepo repo) {
 		this.input = input;
 		this.repo = repo;
 	}
 
 	public void find() {
-		LinkedList<Page> queue = new LinkedList<>();
-		String domain = getDomain();
-		Page startingPage = new Page(input.url, domain, 0L);
-		Set<Page> visited = new HashSet<>();
-
 		webClient = WebClient.create();
 
+		String domain = getDomain();
+		var startingPage = new Page(input.url, domain, 0L);
+
+		var visited = new HashSet<Page>();
+		var queue = new LinkedList<Page>();
 		queue.add(startingPage);
 		repo.pages.add(startingPage);
 
@@ -43,9 +48,13 @@ public class Finder {
 		submitForRequest(startingPage);
 
 		int parsed = 0;
-		while (!queue.isEmpty() && parsed < input.maxUrls) {
+		while (!queue.isEmpty() && parsed < input.maxUrls && !stop) {
 			Page page = queue.poll();
-			awaitResponse(page);
+
+			log.info("Now checking page with url {}. Will {} pause", page.getUrl(), (pauseRelease == null ? "NOT" : ""));
+			if (pauseRelease != null) await(pauseRelease, null, null);
+
+			await(page.getResponseReceivedSignal(), 20L, TimeUnit.SECONDS);
 			visited.add(page);
 
 			Set<Page> urls = page.findUrls();
@@ -54,10 +63,12 @@ public class Finder {
 			repo.pages.addAll(urls);
 
 			urls.forEach(this::submitForRequest);
+			log.info("Submitted {} urls for request", urls.size());
 
 			page.find(input.what);
 			parsed++;
 		}
+
 		repo.pages.forEach(p -> {
 			if (p.getStatus().equals(Status.QUEUED)) p.setStatus(Status.CANCELLED);
 		});
@@ -72,9 +83,14 @@ public class Finder {
 		}
 	}
 
-	private void awaitResponse(Page page) {
+	private void await(CountDownLatch latch, Long t, TimeUnit timeUnit) {
 		try {
-			page.getResponseReceivedSignal().await(20, TimeUnit.SECONDS);
+			if ( t != null ) {
+				log.info("Waiting for page");
+				latch.await(t, timeUnit);
+			} else {
+				latch.await();
+			}
 		} catch ( InterruptedException e ) {
 			e.printStackTrace();
 		}
@@ -83,6 +99,26 @@ public class Finder {
 	private void submitForRequest(Page page) {
 		page.setResponseReceivedSignal(new CountDownLatch(1));
 		executor.execute(() -> page.request(webClient));
+	}
+
+	void pause() {
+		log.info("Pausing finder");
+		pauseRelease = new CountDownLatch(1);
+	}
+
+	void play() {
+		log.info("Resuming finder");
+		pauseRelease.countDown();
+	}
+
+	void stop() {
+		log.info("Stopping finder");
+		stop = true;
+	}
+
+	void reset() {
+		log.info("Resetting finder");
+		stop();
 	}
 
 	static class Input {

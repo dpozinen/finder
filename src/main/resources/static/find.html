@@ -27,10 +27,10 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <table id="table" class="table table-striped">
+            <table id="table" class="table table-striped" style="table-layout:fixed;">
                 <thead>
                 <tr>
-                    <th class="col-md-2">Url</th>
+                    <th class="col-md-10">Url</th>
                     <th class="col-md-2">Level</th>
                     <th class="col-md-2">Status</th>
                 </tr>
@@ -48,18 +48,22 @@ $( document ).ready(function() {
 });
 
 function play() {
+    sendPlay();
     fixButtons(['#pause', '#stop'], ['#play']);
 }
 
 function stop() {
+    sendPause();
     fixButtons([], ['#play', '#pause', '#stop']);
 }
 
 function pause() {
-    fixButtons(['#play'], ['#pause', '#stop']);
+    sendPause();
+    fixButtons(['#play'], ['#pause']);
 }
 
 function reset() {
+    sendReset();
     window.location.replace("/index.html");
 }
 

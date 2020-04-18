@@ -3,6 +3,7 @@ package finder.controller;
 import finder.service.FinderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,4 +34,25 @@ public class FinderController {
 	public void query(@RequestBody Map<String, String> form) {
 		service.find(form);
 	}
+
+	@MessageMapping("/pause")
+	public void pause() {
+		service.pause();
+	}
+
+	@MessageMapping("/play")
+	public void play() {
+		service.play();
+	}
+
+	@MessageMapping("/stop")
+	public void stop() {
+		service.stop();
+	}
+
+	@MessageMapping("/reset")
+	public void reset() {
+		service.reset();
+	}
+
 }
