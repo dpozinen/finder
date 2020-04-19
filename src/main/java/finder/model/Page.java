@@ -15,9 +15,11 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-public final @Data class Page {
+public final @Data
+class Page {
 
 	private Long id;
 	private String url;
@@ -27,7 +29,7 @@ public final @Data class Page {
 	private Status status = Status.QUEUED;
 
 	@JsonIgnore
-	private volatile String content;
+	private String content;
 	private int statusCode;
 	private String errorMsg;
 
@@ -41,27 +43,23 @@ public final @Data class Page {
 
 	public void request(WebClient webClient) {
 		makeUrl();
+		BiFunction<Integer, String, Mono<? extends String>> onErr = (code, msg) -> {
+			statusCode = code;
+			errorMsg = msg;
+			return Mono.just("");
+		};
 		content = webClient.get().uri(url)
 						   .retrieve()
 						   .bodyToMono(String.class)
 						   .onErrorResume(WebClientResponseException.class,
-							   e -> {
-									statusCode = e.getRawStatusCode();
-									return Mono.justOrEmpty("");
-						   })
+										  e -> {
+											  statusCode = e.getRawStatusCode();
+											  return Mono.just("");
+										  })
 						   .onErrorResume(DataBufferLimitException.class,
-							   e -> {
-								   statusCode = -1;
-								   errorMsg = "Response size too large";
-								   return Mono.justOrEmpty("");
-							   }
-						   )
-						   .onErrorResume(Exception.class,
-							   e -> {
-								   statusCode = -1;
-								   errorMsg = "Random Exception";
-								   return Mono.justOrEmpty("");
-							   })
+										  e -> onErr.apply(-1, "Response size too large"))
+						   .onErrorResume(Throwable.class,
+										  e -> onErr.apply(-1, "Random Exception"))
 						   .block();
 		if (statusCode == 0) statusCode = 200;
 		responseReceivedSignal.countDown();
@@ -71,7 +69,7 @@ public final @Data class Page {
 		try {
 			var uri = new URI(url);
 			if (!uri.isAbsolute())
-				url = new URI("https://" + domain + (url.startsWith("/") ? url : "/"+url)).toString();
+				url = new URI("https://" + domain + (url.startsWith("/") ? url : "/" + url)).toString();
 		} catch (URISyntaxException e) {
 			status = Status.ERROR;
 			errorMsg = "Malformed url";
@@ -88,7 +86,7 @@ public final @Data class Page {
 	}
 
 	public Set<Page> findUrls() {
-		if (content == null) return new HashSet<>(Set.of());
+		if (content == null) return new HashSet<>();
 		return Jsoup.parse(content)
 					.select("a[href]").eachAttr("href").stream()
 					.filter(s -> !s.isBlank())
@@ -98,7 +96,7 @@ public final @Data class Page {
 
 	@Override
 	public boolean equals(Object o) {
-		return o instanceof Page && (((Page)o).url.equals(url) && ((Page)o).domain.equals(domain));
+		return o instanceof Page && ((Page) o).url.equals(url) && ((Page) o).domain.equals(domain);
 	}
 
 	@Override
