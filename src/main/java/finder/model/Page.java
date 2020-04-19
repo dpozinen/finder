@@ -1,9 +1,12 @@
 package finder.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.buffer.DataBufferLimitException;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -16,10 +19,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-public final @Data
-class Page {
+@RedisHash("Page")
+public final @Data class Page {
 
-	private Long id;
+	@Id private String id;
 	private final String url;
 	private final String domain;
 
@@ -31,6 +34,7 @@ class Page {
 	private int statusCode;
 	private String errorMsg;
 
+	@JsonIgnore
 	private CountDownLatch responseReceivedSignal;
 
 	public Page(String url, String domain, long level) {

@@ -9,7 +9,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Map;
 
@@ -27,32 +29,32 @@ public class FinderController {
 
 	@Scheduled(fixedRate = 4000)
 	public void refresh() {
-		template.convertAndSend("/updates", service.update());
+		template.convertAndSend("/updates", service.update("1"));
 	}
 
 	@PostMapping("/finder/query")
-	public void query(@RequestBody Map<String, String> form) {
-		service.find(form);
+	public String query(@RequestBody Map<String, String> form) {
+		return service.find(form);
 	}
 
-	@MessageMapping("/pause")
-	public void pause() {
-		service.pause();
+	@MessageMapping("/pause/{id}")
+	public void pause(@RequestParam String id) {
+		service.pause(id);
 	}
 
-	@MessageMapping("/play")
-	public void play() {
-		service.play();
+	@MessageMapping("/play/{id}")
+	public void play(@RequestParam String id) {
+		service.play(id);
 	}
 
-	@MessageMapping("/stop")
-	public void stop() {
-		service.stop();
+	@MessageMapping("/stop/{id}")
+	public void stop(@RequestParam String id) {
+		service.stop(id);
 	}
 
-	@MessageMapping("/reset")
-	public void reset() {
-		service.reset();
+	@MessageMapping("/reset/{id}")
+	public void reset(@RequestParam String id) {
+		service.reset(id);
 	}
 
 }

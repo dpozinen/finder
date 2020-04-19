@@ -11,7 +11,7 @@ public class Pause {
 	private final Condition resume = lock.newCondition();
 	private volatile boolean isPaused;
 
-	void pause() {
+	public void pause() {
 		lock.lock();
 		try {
 			log.info("..............Pausing..............");
@@ -21,7 +21,7 @@ public class Pause {
 		}
 	}
 
-	void resume() {
+	public void resume() {
 		lock.lock();
 		try {
 			if (isPaused) {

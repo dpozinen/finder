@@ -2,7 +2,7 @@ package finder.service;
 
 import finder.model.Page;
 import finder.model.Status;
-import finder.repo.PageRepo;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class Finder {
 
-	private final PageRepo repo;
 	private final Input input;
+	private final Set<Page> out;
 
 	private WebClient webClient;
 
@@ -26,10 +26,10 @@ public class Finder {
 	private final Pause pause;
 	private volatile boolean stop;
 
-	public Finder(Input input, PageRepo repo) {
+	public Finder(Input input, Pause pause, Set<Page> out) {
 		this.input = input;
-		this.repo = repo;
-		this.pause = new Pause();
+		this.pause = pause;
+		this.out = out;
 	}
 
 	public void find() {
@@ -40,7 +40,7 @@ public class Finder {
 		var visited = new HashSet<Page>();
 		var queue = new LinkedList<Page>();
 		queue.add(startingPage);
-		repo.pages.add(startingPage);
+		out.add(startingPage);
 
 		executor = new PausePool(input.threads, pause);
 		submitForRequest(startingPage);
@@ -51,18 +51,17 @@ public class Finder {
 			log.info("Now checking page with url {}. Will{} pause", page.getUrl(), (pause.isPaused() ? "" : " NOT"));
 			pause.await();
 
-			await(page);
-			visited.add(page);
+			await(page); visited.add(page);
 
 			handleNewUrls(visited, queue, page);
 
 			page.find(input.what);
 		}
 
-		repo.pages.forEach(p -> {
+		out.forEach(p -> {
 			if (p.getStatus().equals(Status.QUEUED)) p.setStatus(Status.CANCELLED);
 		});
-		executor.shutdown();
+		executor.shutdownNow();
 	}
 
 	private void handleNewUrls(HashSet<Page> visited, LinkedList<Page> queue, Page page) {
@@ -78,7 +77,7 @@ public class Finder {
 		}
 
         queue.addAll(newPages);
-        repo.pages.addAll(newPages);
+        out.addAll(newPages);
 
 		newPages.forEach(this::submitForRequest);
 		log.info("Submitted {} urls for request", urls.size());
@@ -110,27 +109,11 @@ public class Finder {
 		});
 	}
 
-	void pause() {
-		log.info("Pausing finder");
-		pause.pause();
-	}
-
-	void play() {
-		log.info("Resuming finder");
-		pause.resume();
-	}
-
-	void stop() {
-		log.info("Stopping finder");
+	public void stop() {
 		stop = true;
 	}
 
-	void reset() {
-		log.info("Resetting finder");
-		stop();
-	}
-
-	static class Input {
+	public static class Input {
 		private final String what;
 		private final String url;
 		private final short threads;
