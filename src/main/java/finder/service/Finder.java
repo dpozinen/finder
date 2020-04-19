@@ -12,8 +12,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -21,11 +19,11 @@ public class Finder {
 
 	private final PageRepo repo;
 	private final Input input;
-	private ThreadPoolExecutor executor;
 
 	private WebClient webClient;
 
-	private volatile CountDownLatch pauseRelease;
+	private PausePool executor;
+	private Pause pause;
 	private volatile boolean stop;
 
 	public Finder(Input input, PageRepo repo) {
@@ -35,7 +33,6 @@ public class Finder {
 
 	public void find() {
 		webClient = WebClient.create();
-
 		String domain = getDomain();
 		var startingPage = new Page(input.url, domain, 0L);
 
@@ -44,26 +41,21 @@ public class Finder {
 		queue.add(startingPage);
 		repo.pages.add(startingPage);
 
-		executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(input.threads);
+		pause = new Pause();
+		executor = new PausePool(input.threads, pause);
 		submitForRequest(startingPage);
 
 		int parsed = 0;
 		while (!queue.isEmpty() && parsed < input.maxUrls && !stop) {
 			Page page = queue.poll();
 
-			log.info("Now checking page with url {}. Will {} pause", page.getUrl(), (pauseRelease == null ? "NOT" : ""));
-			if (pauseRelease != null) await(pauseRelease, null, null);
+			log.info("Now checking page with url {}. Will {} pause", page.getUrl(), (pause.isPaused() ? "NOT" : ""));
+			if (pause.isPaused()) pause.await();
 
-			await(page.getResponseReceivedSignal(), 20L, TimeUnit.SECONDS);
+			await(page);
 			visited.add(page);
 
-			Set<Page> urls = page.findUrls();
-			urls.removeAll(visited);
-			queue.addAll(urls);
-			repo.pages.addAll(urls);
-
-			urls.forEach(this::submitForRequest);
-			log.info("Submitted {} urls for request", urls.size());
+			handleNewUrls(visited, queue, page);
 
 			page.find(input.what);
 			parsed++;
@@ -75,6 +67,16 @@ public class Finder {
 		executor.shutdown();
 	}
 
+	private void handleNewUrls(HashSet<Page> visited, LinkedList<Page> queue, Page page) {
+		Set<Page> urls = page.findUrls();
+		urls.removeAll(visited);
+		queue.addAll(urls);
+		repo.pages.addAll(urls);
+
+		urls.forEach(this::submitForRequest);
+		log.info("Submitted {} urls for request", urls.size());
+	}
+
 	private String getDomain() {
 		try {
 			return new URI(input.url).getHost();
@@ -83,14 +85,9 @@ public class Finder {
 		}
 	}
 
-	private void await(CountDownLatch latch, Long t, TimeUnit timeUnit) {
+	private void await(Page page) {
 		try {
-			if ( t != null ) {
-				log.info("Waiting for page");
-				latch.await(t, timeUnit);
-			} else {
-				latch.await();
-			}
+			page.getResponseReceivedSignal().await(20L, TimeUnit.SECONDS);
 		} catch ( InterruptedException e ) {
 			e.printStackTrace();
 		}
@@ -103,12 +100,12 @@ public class Finder {
 
 	void pause() {
 		log.info("Pausing finder");
-		pauseRelease = new CountDownLatch(1);
+		pause.pause();
 	}
 
 	void play() {
 		log.info("Resuming finder");
-		pauseRelease.countDown();
+		pause.resume();
 	}
 
 	void stop() {
