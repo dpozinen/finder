@@ -23,12 +23,13 @@ public class Finder {
 	private WebClient webClient;
 
 	private PausePool executor;
-	private Pause pause;
+	private final Pause pause;
 	private volatile boolean stop;
 
 	public Finder(Input input, PageRepo repo) {
 		this.input = input;
 		this.repo = repo;
+		this.pause = new Pause();
 	}
 
 	public void find() {
@@ -41,12 +42,10 @@ public class Finder {
 		queue.add(startingPage);
 		repo.pages.add(startingPage);
 
-		pause = new Pause();
 		executor = new PausePool(input.threads, pause);
 		submitForRequest(startingPage);
 
-		int parsed = 0;
-		while (!queue.isEmpty() && parsed < input.maxUrls && !stop) {
+		while (!queue.isEmpty() && !stop) {
 			Page page = queue.poll();
 
 			log.info("Now checking page with url {}. Will {} pause", page.getUrl(), (pause.isPaused() ? "NOT" : ""));
@@ -58,7 +57,6 @@ public class Finder {
 			handleNewUrls(visited, queue, page);
 
 			page.find(input.what);
-			parsed++;
 		}
 
 		repo.pages.forEach(p -> {
@@ -70,17 +68,27 @@ public class Finder {
 	private void handleNewUrls(HashSet<Page> visited, LinkedList<Page> queue, Page page) {
 		Set<Page> urls = page.findUrls();
 		urls.removeAll(visited);
-		queue.addAll(urls);
-		repo.pages.addAll(urls);
 
-		urls.forEach(this::submitForRequest);
+		int newSize = urls.size();
+        var newUrls = new HashSet<Page>();
+
+		for (Page url : urls) {
+			if (queue.size() + newSize > input.maxUrls)
+				break;
+            newUrls.add(url);
+		}
+
+        queue.addAll(newUrls);
+        repo.pages.addAll(newUrls);
+
+		newUrls.forEach(this::submitForRequest);
 		log.info("Submitted {} urls for request", urls.size());
 	}
 
 	private String getDomain() {
 		try {
 			return new URI(input.url).getHost();
-		} catch ( URISyntaxException e ) {
+		} catch (URISyntaxException e) {
 			return "";
 		}
 	}
@@ -88,7 +96,7 @@ public class Finder {
 	private void await(Page page) {
 		try {
 			page.getResponseReceivedSignal().await(20L, TimeUnit.SECONDS);
-		} catch ( InterruptedException e ) {
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
