@@ -48,8 +48,8 @@ public class Finder {
 		while (!queue.isEmpty() && !stop) {
 			Page page = queue.poll();
 
-			log.info("Now checking page with url {}. Will {} pause", page.getUrl(), (pause.isPaused() ? "NOT" : ""));
-			if (pause.isPaused()) pause.await();
+			log.info("Now checking page with url {}. Will{} pause", page.getUrl(), (pause.isPaused() ? "" : " NOT"));
+			pause.await();
 
 			await(page);
 			visited.add(page);
@@ -69,11 +69,10 @@ public class Finder {
 		Set<Page> urls = page.findUrls();
 		urls.removeAll(visited);
 
-		int newSize = urls.size();
         var newUrls = new HashSet<Page>();
 
 		for (Page url : urls) {
-			if (queue.size() + newSize > input.maxUrls)
+			if (newUrls.size() > input.maxUrls)
 				break;
             newUrls.add(url);
 		}
@@ -95,7 +94,7 @@ public class Finder {
 
 	private void await(Page page) {
 		try {
-			page.getResponseReceivedSignal().await(20L, TimeUnit.SECONDS);
+			page.getResponseReceivedSignal().await(5L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -103,7 +102,12 @@ public class Finder {
 
 	private void submitForRequest(Page page) {
 		page.setResponseReceivedSignal(new CountDownLatch(1));
-		executor.execute(() -> page.request(webClient));
+		executor.execute(() -> {
+			String url = page.getUrl();
+			log.info("Requesting %s".formatted(url));
+			page.request(webClient);
+			log.info("Got response from %s".formatted(url));
+		});
 	}
 
 	void pause() {
