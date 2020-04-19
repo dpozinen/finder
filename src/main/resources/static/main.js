@@ -37,7 +37,11 @@ function refreshTable(pages) {
 function getStatus(page) {
     var status = page.status;
     if (status == 'ERROR') {
-        return page.errorMsg;
+        if (page.errorMsg == null) {
+            return page.statusCode;
+        } else {
+            return page.errorMsg;
+        }
     } else {
         return status;
     }
