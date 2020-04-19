@@ -46,6 +46,6 @@ public class Pause {
 	}
 
 	boolean isPaused() {
-		return false;
+		return isPaused;
 	}
 }
