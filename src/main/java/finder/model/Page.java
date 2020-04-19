@@ -2,9 +2,7 @@ package finder.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.jsoup.Jsoup;
-import org.jsoup.select.Collector;
 import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -22,7 +20,7 @@ public final @Data
 class Page {
 
 	private Long id;
-	private String url;
+	private final String url;
 	private final String domain;
 
 	private final Long level;
@@ -42,7 +40,7 @@ class Page {
 	}
 
 	public void request(WebClient webClient) {
-		makeUrl();
+		var url = makeUrl();
 		BiFunction<Integer, String, Mono<? extends String>> onErr = (code, msg) -> {
 			statusCode = code;
 			errorMsg = msg;
@@ -65,15 +63,16 @@ class Page {
 		responseReceivedSignal.countDown();
 	}
 
-	private void makeUrl() {
+	private String makeUrl() {
 		try {
 			var uri = new URI(url);
 			if (!uri.isAbsolute())
-				url = new URI("https://" + domain + (url.startsWith("/") ? url : "/" + url)).toString();
+				return new URI("https://" + domain + (url.startsWith("/") ? url : "/" + url)).toString();
 		} catch (URISyntaxException e) {
 			status = Status.ERROR;
 			errorMsg = "Malformed url";
 		}
+		return url;
 	}
 
 	public void find(String what) {
