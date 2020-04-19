@@ -69,18 +69,18 @@ public class Finder {
 		Set<Page> urls = page.findUrls();
 		urls.removeAll(visited);
 
-        var newUrls = new HashSet<Page>();
+        var newPages = new HashSet<Page>();
 
 		for (Page url : urls) {
-			if (newUrls.size() > input.maxUrls)
+			if (visited.size() + queue.size() + newPages.size() >= input.maxUrls)
 				break;
-            newUrls.add(url);
+            newPages.add(url);
 		}
 
-        queue.addAll(newUrls);
-        repo.pages.addAll(newUrls);
+        queue.addAll(newPages);
+        repo.pages.addAll(newPages);
 
-		newUrls.forEach(this::submitForRequest);
+		newPages.forEach(this::submitForRequest);
 		log.info("Submitted {} urls for request", urls.size());
 	}
 
