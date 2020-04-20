@@ -6,15 +6,18 @@ import finder.repo.JobRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 public class FinderService {
 
 	@Autowired
 	private JobRepo repo;
+	private final ExecutorService pool = Executors.newFixedThreadPool(3);
+	private final Map<String, Future<?>> futures = new HashMap<>();
 
 	public Set<Page> update(String id) {
 		return repo.findById(id).map(Job::getPages).orElseGet(Set::of);
@@ -30,8 +33,12 @@ public class FinderService {
 		Job job = new Job(input);
 
 		repo.save(job);
-		job.run();
-		return job.getId();
+		var jobId = job.getId();
+
+		Future<?> future = pool.submit(job::run);
+		futures.put(jobId, future);
+
+		return jobId;
 	}
 
 	public void pause(String id) {
@@ -43,7 +50,10 @@ public class FinderService {
 	}
 
 	public void stop(String id) {
-		repo.findById(id).ifPresent(Job::stop);
+		repo.findById(id).ifPresent(j -> {
+			j.stop();
+			futures.get(id).cancel(true);
+		});
 	}
 
 	public void reset(String id) {
