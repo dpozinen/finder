@@ -1,15 +1,24 @@
 var stompClient = null;
+var jobId = null;
 
 function prepare() {
     connect();
 }
 
 function connect() {
+    var urlParams = new URLSearchParams(window.location.search);
+
+    jobId = urlParams.get('job');
+    if (jobId == null) {
+        fixButtons([], ['#play', '#pause', '#stop']);
+        alert("No Job Id");
+    }
+
     var socket = new SockJS('/finder/stream');
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
-        stompClient.subscribe('/updates', function (table) {
+        stompClient.subscribe('/updates/' + jobId, function (table) {
             refreshTable(JSON.parse(table.body));
         });
     });
@@ -48,17 +57,23 @@ function getStatus(page) {
 }
 
 function sendPause() {
-    stompClient.send("/finder/pause", {}, "");
+    stompClient.send("/finder/pause/"+jobId, {}, "");
 }
 
 function sendStop() {
-    stompClient.send("/finder/stop", {}, "");
+    stompClient.send("/finder/stop/"+jobId, {}, "");
 }
 
 function sendPlay() {
-    stompClient.send("/finder/play", {}, "");
+    stompClient.send("/finder/play/"+jobId, {}, "");
 }
 
 function sendReset() {
-    stompClient.send("/finder/reset", {}, "");
+    stompClient.send("/finder/reset/"+jobId, {}, "");
+}
+
+
+function fixButtons(toEnable, toDisable) {
+    toEnable.forEach(e => $(e).prop('disabled', false));
+    toDisable.forEach(e => $(e).prop('disabled', true));
 }

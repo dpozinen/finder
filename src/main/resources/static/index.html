@@ -60,7 +60,7 @@ function query(e) {
             contentType: "application/json",
             success: function(data) {
                 var id = data.id;
-                var url = "/find.html?jobId="+id;
+                var url = "/find.html?job="+id;
                 window.location.replace(url);
             }
     });
