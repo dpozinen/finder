@@ -52,13 +52,17 @@ function query(e) {
                     return obj;
                 }, {});
 
-    window.location.replace('/find.html');
     $.ajax({
             url: '/finder/query',
             data: JSON.stringify(form),
-            dataType : 'json',
+            dataType: 'json',
             method: 'post',
-            contentType: "application/json", // to fix '??' in form jQuery panic
+            contentType: "application/json",
+            success: function(data) {
+                var id = data.id;
+                var url = "/find.html?jobId="+id;
+                window.location.replace(url);
+            }
     });
 }
 
