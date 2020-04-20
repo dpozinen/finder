@@ -1,4 +1,4 @@
-package finder.service;
+package finder.core.concurrent;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 

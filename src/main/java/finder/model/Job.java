@@ -1,50 +1,70 @@
 package finder.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import finder.service.Finder;
-import finder.service.Pause;
+import finder.core.Core;
+import finder.core.Input;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Reference;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.redis.core.RedisHash;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
 @RedisHash("Job")
 public @Data class Job implements Serializable {
 
+	@Autowired
+	Function<Input, Core> coreFactory;
+
 	@Id
 	private String id;
 	@JsonIgnore
-	private transient final Finder finder;
-	private final Set<Page> pages = new HashSet<>();
-	@JsonIgnore
-	private transient final Pause pause = new Pause();
-	private volatile Status status;
+	@Transient
+	private transient Core core;
 
-	public Job(Finder.Input input) {
-		this.finder = new Finder(input, pause, pages);
+	@Reference
+	private Set<Page> pages = new HashSet<>();
+
+	private volatile Status status;
+	private Input input;
+
+	public Job() {}
+
+	public Job(Input input) {
+		this.input = input;
 		this.status = Status.QUEUED;
 	}
 
 	public void run() {
-		finder.find();
+		core = coreFactory.apply(input);
+		status = Status.RUNNING;
+		core.find();
 		status = Status.DONE;
 	}
 
 	public void pause() {
-		status = Status.PAUSED;
-		pause.pause();
+		if (status.equals(Status.RUNNING)) {
+			status = Status.PAUSED;
+			core.pause();
+		}
 	}
 
 	public void play() {
-		status = Status.RUNNING;
-		pause.resume();
+		switch (status) {
+			case RUNNING:
+			case QUEUED:
+				status = Status.RUNNING;
+				core.play();
+		}
 	}
 
 	public void stop() {
-		finder.stop();
+		core.stop();
 		status = Status.CANCELLED;
 	}
 

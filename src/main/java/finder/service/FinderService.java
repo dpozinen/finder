@@ -1,5 +1,6 @@
 package finder.service;
 
+import finder.core.Input;
 import finder.model.Job;
 import finder.model.Page;
 import finder.repo.JobRepo;
@@ -10,14 +11,22 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 @Service
 public class FinderService {
 
 	@Autowired
 	private JobRepo repo;
+	@Autowired
+	Function<Input, Job> jobFactory;
+
 	private final ExecutorService pool = Executors.newFixedThreadPool(3);
 	private final Map<String, Future<?>> futures = new HashMap<>();
+
+	public Iterable<Job> updateAll() {
+		return repo.findAll();
+	}
 
 	public Set<Page> update(String id) {
 		return repo.findById(id).map(Job::getPages).orElseGet(Set::of);
@@ -29,8 +38,8 @@ public class FinderService {
 		var find = form.get("find");
 		var maxUrls = form.get("maxUrls");
 
-		Finder.Input input = new Finder.Input(find, url, Short.parseShort(threads), Short.parseShort(maxUrls));
-		Job job = new Job(input);
+		Input input = new Input(find, url, Short.parseShort(threads), Short.parseShort(maxUrls));
+		Job job = jobFactory.apply(input);
 
 		repo.save(job);
 		var jobId = job.getId();

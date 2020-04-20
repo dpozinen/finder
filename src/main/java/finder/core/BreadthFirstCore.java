@@ -1,7 +1,13 @@
-package finder.service;
+package finder.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import finder.core.concurrent.Pause;
+import finder.core.concurrent.PausePool;
 import finder.model.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
@@ -13,34 +19,38 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class Finder {
+public class BreadthFirstCore implements Core {
+
+	@Autowired
+	private CrudRepository<Page, String> pageRepo;
+
+	@JsonIgnore @Transient
+	private transient final Pause pause = new Pause();
 
 	private final Input input;
-	private final Set<Page> out;
+	private Set<Page> out;
 
 	private WebClient webClient;
 
 	private PausePool executor;
-	private final Pause pause;
-	private volatile boolean stop;
+	private boolean stop;
 
-	public Finder(Input input, Pause pause, Set<Page> out) {
+	public BreadthFirstCore(Input input) {
 		this.input = input;
-		this.pause = pause;
-		this.out = out;
 	}
 
+	@Override
 	public void find() {
 		webClient = WebClient.create();
 		String domain = getDomain();
-		var startingPage = new Page(input.url, domain, 0L);
+		var startingPage = new Page(input.getUrl(), domain, 0L);
 
 		var visited = new HashSet<Page>();
 		var queue = new LinkedList<Page>();
 		queue.add(startingPage);
 		out.add(startingPage);
 
-		executor = new PausePool(input.threads, pause);
+		executor = new PausePool(input.getThreads(), pause);
 		submitForRequest(startingPage);
 
 		while (!queue.isEmpty() && !stop) {
@@ -53,7 +63,7 @@ public class Finder {
 
 			handleNewUrls(visited, queue, page);
 
-			page.find(input.what);
+			page.find(input.getWhat());
 		}
 
 		out.forEach(p -> {
@@ -69,13 +79,14 @@ public class Finder {
         var newPages = new HashSet<Page>();
 
 		for (Page url : urls) {
-			if (visited.size() + queue.size() + newPages.size() >= input.maxUrls)
+			if (visited.size() + queue.size() + newPages.size() >= input.getMaxUrls())
 				break;
             newPages.add(url);
 		}
 
         queue.addAll(newPages);
         out.addAll(newPages);
+		pageRepo.saveAll(newPages);
 
 		newPages.forEach(this::submitForRequest);
 		log.info("Submitted {} urls for request", urls.size());
@@ -83,7 +94,7 @@ public class Finder {
 
 	private String getDomain() {
 		try {
-			return new URI(input.url).getHost();
+			return new URI(input.getUrl()).getHost();
 		} catch (URISyntaxException e) {
 			return "";
 		}
@@ -107,21 +118,19 @@ public class Finder {
 		});
 	}
 
+	@Override
+	public void pause() {
+		pause.pause();
+	}
+
+	@Override
 	public void stop() {
 		stop = true;
 	}
 
-	public static class Input {
-		private final String what;
-		private final String url;
-		private final short threads;
-		private final short maxUrls;
-
-		Input(String what, String url, short threads, short maxUrls) {
-			this.what = what;
-			this.url = url;
-			this.threads = threads;
-			this.maxUrls = maxUrls;
-		}
+	@Override
+	public void play() {
+		pause.resume();
 	}
+
 }

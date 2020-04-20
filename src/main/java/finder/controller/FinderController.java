@@ -35,7 +35,7 @@ public class FinderController {
 
 	@Scheduled(fixedRate = 4000)
 	public void refresh() {
-		template.convertAndSend("/updates", service.update("1"));
+		service.updateAll().forEach(j -> template.convertAndSend("/updates/"+j.getId(), j.getPages()));
 	}
 
 	@PostMapping("/finder/query")

@@ -1,4 +1,4 @@
-package finder.service;
+package finder.core.concurrent;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,7 +34,7 @@ public class Pause {
 		}
 	}
 
-	void await() {
+	public void await() {
 		lock.lock();
 		try {
 			while (isPaused) resume.await();
@@ -45,7 +45,7 @@ public class Pause {
 		}
 	}
 
-	boolean isPaused() {
+	public boolean isPaused() {
 		return isPaused;
 	}
 }
