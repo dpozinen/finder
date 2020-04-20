@@ -1,8 +1,6 @@
 package finder.service;
 
 import finder.model.Page;
-import finder.model.Status;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -59,7 +57,7 @@ public class Finder {
 		}
 
 		out.forEach(p -> {
-			if (p.getStatus().equals(Status.QUEUED)) p.setStatus(Status.CANCELLED);
+			if (p.getStatus().equals(Page.Status.QUEUED)) p.setStatus(Page.Status.CANCELLED);
 		});
 		executor.shutdownNow();
 	}

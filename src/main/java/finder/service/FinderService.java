@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -47,5 +48,9 @@ public class FinderService {
 
 	public void reset(String id) {
 		repo.findById(id).ifPresent(j -> { j.stop(); j.reset(); });
+	}
+
+	public Optional<Job> getJob(String id) {
+		return repo.findById(id);
 	}
 }
