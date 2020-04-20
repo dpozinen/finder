@@ -39,8 +39,9 @@ public class FinderController {
 	}
 
 	@PostMapping("/finder/query")
-	public String query(@RequestBody Map<String, String> form) {
-		return service.find(form);
+	public ResponseEntity<Map<String, String>> query(@RequestBody Map<String, String> form) {
+		String id = service.find(form);
+		return new ResponseEntity<>(Map.of("id", id), HttpStatus.OK);
 	}
 
 	@MessageMapping("/pause/{id}")
