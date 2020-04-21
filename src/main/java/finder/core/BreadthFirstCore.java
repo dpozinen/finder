@@ -24,7 +24,7 @@ public class BreadthFirstCore implements Core {
 	@Autowired
 	private CrudRepository<Page, String> pageRepo;
 
-	@JsonIgnore @Transient
+	@JsonIgnore @Transient // TODO figure out why transient didn't "add" @Transient
 	private transient final Pause pause = new Pause();
 
 	private final Input input;
@@ -40,7 +40,7 @@ public class BreadthFirstCore implements Core {
 	}
 
 	@Override
-	public void find() {
+	public void run() {
 		webClient = WebClient.create();
 		String domain = getDomain();
 		var startingPage = new Page(input.getUrl(), domain, 0L);

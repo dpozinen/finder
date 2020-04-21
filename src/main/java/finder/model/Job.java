@@ -19,12 +19,11 @@ import java.util.function.Function;
 public @Data class Job implements Serializable {
 
 	@Autowired
-	Function<Input, Core> coreFactory;
+	private Function<Input, Core> coreFactory;
 
 	@Id
 	private String id;
-	@JsonIgnore
-	@Transient
+	@JsonIgnore	@Transient
 	private transient Core core;
 
 	@Reference
@@ -43,7 +42,7 @@ public @Data class Job implements Serializable {
 	public void run() {
 		core = coreFactory.apply(input);
 		status = Status.RUNNING;
-		core.find();
+		core.run();
 		status = Status.DONE;
 	}
 
@@ -56,7 +55,7 @@ public @Data class Job implements Serializable {
 
 	public void play() {
 		switch (status) {
-			case RUNNING:
+			case PAUSED:
 			case QUEUED:
 				status = Status.RUNNING;
 				core.play();

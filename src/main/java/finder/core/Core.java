@@ -5,7 +5,7 @@ package finder.core;
   and the core being responsible for saving the pages to repo etc.
  */
 public interface Core {
-	void find();
+	void run();
 	void pause();
 	void stop();
 	void play();
