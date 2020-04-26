@@ -19,20 +19,21 @@ public class RedisMessagePublisher {
 	}
 
 	public void publishAdd(String jobId, Page page) {
-		redisTemplate.convertAndSend(topic.getTopic(), join(jobId, List.of(page), false));
-	}
-
-	private Map<String, ?> join(String jobId, Collection<?> pages, boolean refresh) {
-		return Map.of("job", jobId,
-					  "pages", pages,
-					  "refresh", refresh);
+		redisTemplate.convertAndSend(topic.getTopic(), toMessage(jobId, List.of(page), List.of()));
 	}
 
 	public void publishAdd(String jobId, Collection<Page> pages) {
-		redisTemplate.convertAndSend(topic.getTopic(), join(jobId, pages, false));
+		redisTemplate.convertAndSend(topic.getTopic(), toMessage(jobId, pages, List.of()));
 	}
 
-	public void publishRefresh(String jobId, Collection<Object> members) {
-		redisTemplate.convertAndSend(topic.getTopic(), join(jobId, members, true));
+	public void publishUpdate(String jobId, Collection<Page> pages) {
+		redisTemplate.convertAndSend(topic.getTopic(), toMessage(jobId, List.of(), pages));
 	}
+
+	private Map<String, ?> toMessage(String jobId, Collection<Page> newPages, Collection<Page> updatedPages) {
+		return Map.of("job", jobId,
+					  "newPages", newPages,
+					  "updatedPages", updatedPages);
+	}
+
 }

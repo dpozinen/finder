@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import finder.core.concurrent.Pause;
 import finder.core.concurrent.PausePool;
 import finder.model.Page;
+import finder.repo.PageRepo;
 import finder.service.RedisMessagePublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +17,14 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class Finder implements Core {
 
-	@Autowired RedisMessagePublisher redisPublisher;
-	@Autowired RedisTemplate<String, Object> redisTemplate;
-	protected Set<Page> out = new HashSet<>();
+	@Autowired private RedisMessagePublisher redisPublisher;
+	@Autowired private RedisTemplate<String, Object> redisTemplate;
+	@Autowired private PageRepo pageRepo;
 
 	@JsonIgnore @Transient // TODO figure out why transient didn't "add" @Transient
 	protected transient final Pause pause = new Pause();
@@ -65,16 +67,6 @@ public abstract class Finder implements Core {
 		});
 	}
 
-	protected void addNewPage(Page page) {
-		redisTemplate.opsForSet().add(jobId, page);
-		redisPublisher.publishAdd(jobId, page);
-	}
-
-	protected void addNewPages(Collection<Page> pages) {
-		redisTemplate.opsForSet().add(jobId, pages.toArray(new Page[0]));
-		redisPublisher.publishAdd(jobId, pages);
-	}
-
 	protected String getDomain() {
 		try {
 			return new URI(input.getUrl()).getHost();
@@ -87,17 +79,30 @@ public abstract class Finder implements Core {
 		} catch (InterruptedException e) { e.printStackTrace(); }
 	}
 
-	protected void cancelQueued() {
-		Set<Object> members = redisTemplate.opsForSet().members(jobId);
-		redisTemplate.delete(jobId);
-		log.info("Cancelling {} pages", members.size());
-		Objects.requireNonNull(members).forEach(this::cancel);
-		redisTemplate.opsForSet().add(jobId, members);
-		redisPublisher.publishRefresh(jobId, members);
+	protected void addNewPage(Page page) {
+		pageRepo.save(page);
+		redisTemplate.opsForSet().add(jobId, page.getId());
+		redisPublisher.publishAdd(jobId, page);
 	}
 
-	private void cancel(Object p) {
-		var page = (Map<Object, Object>) p;
-		if (page.get("status").equals(Page.Status.QUEUED.name())) page.put("status", Page.Status.CANCELLED);
+	protected void addNewPages(Collection<Page> pages) {
+		pageRepo.saveAll(pages);
+		var ids = pages.stream().map(Page::getId).toArray(String[]::new);
+		redisTemplate.opsForSet().add(jobId, ids);
+		redisPublisher.publishAdd(jobId, pages);
+	}
+
+	protected void cancelQueued() {
+		Set<String> pages = redisTemplate.opsForSet().members(jobId).stream()
+										 .map(p -> (String)p).collect(Collectors.toSet());
+
+		Set<Page> cancelled = pageRepo.cancel(pages);
+
+		redisPublisher.publishUpdate(jobId, cancelled);
+	}
+
+	protected void updateStatus(Page page) {
+		pageRepo.updateStatus(page);
+		redisPublisher.publishUpdate(jobId, List.of(page));
 	}
 }
