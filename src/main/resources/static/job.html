@@ -10,20 +10,31 @@
     <script src="/main.js"></script>
 </head>
 <body>
-<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript. Please enable Javascript and reload this page!</h2></noscript>
+<nav class="navbar navbar-expand-lg" style="background-color:#9fd6f4;">
+    <a class="navbar-brand text-muted" href="/">Finder</a>
+    <div class="navbar-collapse text-muted" id="nav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link text-muted" href="/">Find</a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link text-muted dropdown-toggle" href="#" id="jobs" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Jobs
+                </a>
+                <div class="dropdown-menu" id="jobList" aria-labelledby="jobs">
+                    <a class="dropdown-item job" href="/job" >Job 1</a>
+                    <a class="dropdown-item job" href="#">Job 2</a>
+                    <a class="dropdown-item job" href="#">Job 3</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
 <div id="main-content" class="container-fluid">
     <div class="row my-4 justify-content-center">
         <h3 class="text-uppercase text-muted">
-            Current progress
+            Job results
         </h3>
-    </div>
-    <div class="row my-4 justify-content-start text-white">
-        <div class="col">
-            <button class="btn btn-primary" id="stop" onclick="stop();">Stop</button>
-            <button class="btn btn-primary" id="play" disabled onclick="play();">Play</button>
-            <button class="btn btn-primary" id="pause" onclick="pause();">Pause</button>
-            <button class="btn btn-primary" id="reset" onclick="reset();">Reset</button>
-        </div>
     </div>
     <div class="row">
         <div class="col">
@@ -42,30 +53,4 @@
     </div>
 </div>
 </body>
-<script>
-$( document ).ready(function() {
-    prepare();
-});
-
-function play() {
-    sendPlay();
-    fixButtons(['#pause', '#stop'], ['#play']);
-}
-
-function stop() {
-    sendPause();
-    fixButtons([], ['#play', '#pause', '#stop']);
-}
-
-function pause() {
-    sendPause();
-    fixButtons(['#play'], ['#pause']);
-}
-
-function reset() {
-    sendReset();
-    window.location.replace("/index.html");
-}
-
-</script>
 </html>

@@ -1,25 +1,26 @@
 package finder.config;
 
-import finder.core.BreadthFirstCore;
+import finder.core.BreadthFirstFinder;
 import finder.core.Input;
 import finder.model.Job;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @Configuration
 public class FinderConfig {
 
 	@Bean
-	public Function<Input, BreadthFirstCore> finderFactory() {
-		return this::breadthFirstCode;
+	public BiFunction<Input, String, BreadthFirstFinder> finderFactory() {
+		return this::breadthFirstFinder;
 	}
 
 	@Bean @Scope("prototype")
-	public BreadthFirstCore breadthFirstCode(Input input) {
-		return new BreadthFirstCore(input);
+	public BreadthFirstFinder breadthFirstFinder(Input input, String jobId) {
+		return new BreadthFirstFinder(input, jobId);
 	}
 
 	@Bean

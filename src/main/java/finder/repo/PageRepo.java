@@ -2,6 +2,8 @@ package finder.repo;
 
 import finder.model.Page;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.util.Pair;
 
-public interface PageRepo extends CrudRepository<Page, String> {
-}
+import java.util.Set;
+
+public interface PageRepo extends CrudRepository<Pair<String, Set<Page>>, String> {}

@@ -29,7 +29,8 @@ public class FinderService {
 	}
 
 	public Set<Page> update(String id) {
-		return repo.findById(id).map(Job::getPages).orElseGet(Set::of);
+		return null;
+//		return repo.findById(id).map(Job::getPages).orElseGet(Set::of);
 	}
 
 	public String find(Map<String, String> form) {

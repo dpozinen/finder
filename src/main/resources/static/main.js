@@ -18,13 +18,15 @@ function connect() {
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
-        stompClient.subscribe('/updates/' + jobId, function (table) {
-            refreshTable(JSON.parse(table.body));
+        stompClient.subscribe('/updates/' + jobId, function (data) {
+            var response = JSON.parse(data.body);
+            updateTable(response.pages, response.refresh);
+//            updateTotal(response.pages.length);
         });
     });
 }
 
-function refreshTable(pages) {
+function updateTable(pages, refresh) {
     var html = $.map(pages, function(page, i) {
         return `
             <tr>
@@ -40,7 +42,11 @@ function refreshTable(pages) {
             </tr>
         `;
     }).join("");
-    $('#pages').html(html);
+    if (refresh) {
+        $('#pages').html(html);
+    } else {
+        $('#pages').append(html);
+    }
 }
 
 function getStatus(page) {

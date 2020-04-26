@@ -1,6 +1,7 @@
 package finder.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.buffer.DataBufferLimitException;
@@ -10,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -18,14 +20,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-@RedisHash("Page")
+@RedisHash("Page") @JsonTypeName("page")
 public final @Data class Page {
 
 	@Id private String id;
-	private final String url;
-	private final String domain;
+	private  String url;
+	private  String domain;
 
-	private final Long level;
+	private  Long level;
 	private Status status = Status.QUEUED;
 
 	@JsonIgnore
@@ -35,6 +37,8 @@ public final @Data class Page {
 
 	@JsonIgnore
 	private CountDownLatch responseReceivedSignal;
+
+	Page(){}
 
 	public Page(String url, String domain, long level) {
 		this.url = url;

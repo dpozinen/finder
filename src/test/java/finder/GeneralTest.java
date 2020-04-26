@@ -15,8 +15,8 @@ public class GeneralTest {
 				 .uri("http://localhost:8080/finder/query")
 				 .body(BodyInserters.fromValue(Map.of(
 				 	"threads", "2",
-				 	"url", "https://www.baeldung.com/spring-5-webclient",
-				 	"find", "baeldung",
+				 	"url", "https://www.github.com/dpozinen",
+				 	"find", "dpozinen",
 				 	"maxUrls", "40"
 				 )))
 				 .exchange()

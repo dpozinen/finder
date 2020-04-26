@@ -12,7 +12,8 @@ public class RedisMessageSubscriber implements MessageListener {
 
 	public static List<String> messageList = new ArrayList<>();
 
-	@Override public void onMessage(Message message, byte[] pattern) {
+	@Override
+	public void onMessage(Message message, byte[] pattern) {
 		messageList.add(message.toString());
 		System.out.println("Message received: " + message.toString());
 	}

@@ -13,21 +13,19 @@ import org.springframework.data.redis.core.RedisHash;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @RedisHash("Job")
 public @Data class Job implements Serializable {
 
 	@Autowired
-	private Function<Input, Core> coreFactory;
+	private BiFunction<Input, String, ? extends Core> coreFactory;
 
 	@Id
 	private String id;
 	@JsonIgnore	@Transient
 	private transient Core core;
-
-	@Reference
-	private Set<Page> pages = new HashSet<>();
 
 	private volatile Status status;
 	private Input input;
@@ -40,7 +38,7 @@ public @Data class Job implements Serializable {
 	}
 
 	public void run() {
-		core = coreFactory.apply(input);
+		core = coreFactory.apply(input, id);
 		status = Status.RUNNING;
 		core.run();
 		status = Status.DONE;
