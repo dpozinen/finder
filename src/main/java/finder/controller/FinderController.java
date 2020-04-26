@@ -2,6 +2,7 @@ package finder.controller;
 
 import finder.model.Job;
 import finder.service.FinderService;
+import lombok.SneakyThrows;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
@@ -22,12 +23,10 @@ public class FinderController implements MessageListener {
 
 	private final SimpMessagingTemplate template;
 	private final FinderService service;
-	private final Jackson2JsonRedisSerializer<Object> redisSerializer;
 
-	public FinderController(SimpMessagingTemplate template, FinderService service, Jackson2JsonRedisSerializer<Object> redisSerializer) {
+	public FinderController(SimpMessagingTemplate template, FinderService service ) {
 		this.template = template;
 		this.service = service;
-		this.redisSerializer = redisSerializer;
 	}
 
 	@GetMapping("/jobs/{id}")
@@ -63,11 +62,12 @@ public class FinderController implements MessageListener {
 		service.reset(id);
 	}
 
-	@Override
+	@SneakyThrows @Override
 	public void onMessage(Message message, byte[] pattern) {
 		String body = new String(message.getBody());
 
 		String jobId = substringBetween(body, "job\":\"", "\"");
+		Thread.sleep(2000); // delay
 		template.convertAndSend("/updates/" + jobId, body);
 	}
 
