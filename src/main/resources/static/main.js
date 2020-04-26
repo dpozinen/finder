@@ -20,33 +20,38 @@ function connect() {
         console.log('Connected: ' + frame);
         stompClient.subscribe('/updates/' + jobId, function (data) {
             var response = JSON.parse(data.body);
-            updateTable(response.pages, response.refresh);
+            addNewPages(response.newPages);
+            updatePages(response.updatedPages);
 //            updateTotal(response.pages.length);
         });
     });
 }
 
-function updateTable(pages, refresh) {
+function updatePages(pages) {
+    $.each(pages, function(i, v) {
+        var id = v.id;
+
+        $('#'+id).find('.status').text(v.status);
+    });
+}
+
+function addNewPages(pages) {
     var html = $.map(pages, function(page, i) {
         return `
-            <tr>
-                <td>
+            <tr id="${page.id}">
+                <td class="url">
                     ${page.url}
                 </td>
-                <td>
+                <td class="level">
                     ${page.level}
                 </td>
-                <td>
+                <td class="status">
                     ${getStatus(page)}
                 </td>
             </tr>
         `;
     }).join("");
-    if (refresh) {
-        $('#pages').html(html);
-    } else {
-        $('#pages').append(html);
-    }
+    $('#pages').append(html);
 }
 
 function getStatus(page) {
