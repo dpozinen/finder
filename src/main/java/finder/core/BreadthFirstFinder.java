@@ -45,6 +45,9 @@ public class BreadthFirstFinder extends Finder {
 
 	protected void handleNewUrls(HashSet<Page> visited, LinkedList<Page> queue, Page page) {
 		Set<Page> urls = page.findUrls();
+		page.find(input.getWhat());
+		updateStatus(page);
+
 		urls.removeAll(visited);
 
 		var newPages = new HashSet<Page>();
@@ -60,7 +63,6 @@ public class BreadthFirstFinder extends Finder {
 		addNewPages(newPages);
 
 		newPages.forEach(this::submitForRequest);
-//		log.info("Submitted {} urls for request", urls.size());
 	}
 
 }
