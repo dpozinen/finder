@@ -6,7 +6,9 @@ import lombok.Data;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -24,18 +26,18 @@ import java.util.stream.Collectors;
 public final @Data class Page {
 
 	@Id private String id;
-	private  String url;
-	private  String domain;
+	private String url;
+	private String domain;
 
-	private  Long level;
+	private Long level;
 	private Status status = Status.QUEUED;
 
-	@JsonIgnore
+	@JsonIgnore @Transient
 	private String content;
 	private int statusCode;
 	private String errorMsg;
 
-	@JsonIgnore
+	@JsonIgnore @Transient
 	private CountDownLatch responseReceivedSignal;
 
 	Page(){}
