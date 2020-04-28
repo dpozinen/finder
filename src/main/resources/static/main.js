@@ -18,13 +18,44 @@ function connect() {
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
-        stompClient.subscribe('/updates/' + jobId, function (data) {
+        checkStatus();
+        var v = stompClient.subscribe('/updates/' + jobId, function (data) {
             var response = JSON.parse(data.body);
             addNewPages(response.newPages);
             updatePages(response.updatedPages);
-//            updateTotal(response.pages.length);
         });
     });
+}
+
+function checkStatus() {
+    $.ajax({
+        url: '/job?id=' + jobId,
+        method: 'get',
+        success : function (data) {
+            if (data.status == 'DONE') {
+                fixButtons([], ['#play', '#pause', '#stop']);
+                stompClient.disconnect(function() {
+                    $.ajax({
+                        url: '/results/job?id=' + jobId,
+                        method: 'get',
+                        success : function (data) {
+                            $.each(data.pages, function(i, page) {
+                                    var html = $.map(pages, makeRow(page, i)).join("");
+                                    $('#pages').html(html);
+                                });
+                        }
+                    });
+                }, {});
+            } else if (data.status == 'PAUSED') {
+                fixButtons(['#play'], ['#pause']);
+            } else if (data.status == 'CANCELLED') {
+                fixButtons([], ['#play', '#pause', '#stop']);
+            }
+        },
+        error : function(data) {
+            var v = "";
+        }
+    })
 }
 
 function updatePages(pages) {
@@ -36,22 +67,24 @@ function updatePages(pages) {
 }
 
 function addNewPages(pages) {
-    var html = $.map(pages, function(page, i) {
-        return `
-            <tr id="${page.id}">
-                <td class="url">
-                    ${page.url}
-                </td>
-                <td class="level">
-                    ${page.level}
-                </td>
-                <td class="status">
-                    ${getStatus(page)}
-                </td>
-            </tr>
-        `;
-    }).join("");
+    var html = $.map(pages, function(v, i) { return makeRow(v, i) }).join("");
     $('#pages').append(html);
+}
+
+function makeRow(page, i) {
+    return `
+        <tr id="${page.id}">
+            <td class="url">
+                ${page.url}
+            </td>
+            <td class="level">
+                ${page.level}
+            </td>
+            <td class="status">
+                ${getStatus(page)}
+            </td>
+        </tr>
+    `;
 }
 
 function getStatus(page) {
@@ -65,6 +98,10 @@ function getStatus(page) {
     } else {
         return status;
     }
+}
+
+function getPagesIfDone() {
+    stompClient.send("/finder/job/"+jobId, {}, "");
 }
 
 function sendPause() {
