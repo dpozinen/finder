@@ -28,7 +28,7 @@ public class Job<R> {
 	}
 
 	public boolean stop() {
-		return changeStateIf(State.RUNNING, core::run, State.STOPPED);
+		return changeStateIf(State.RUNNING, core::stop, State.STOPPED);
 	}
 
 	public boolean resume() {
