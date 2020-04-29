@@ -12,6 +12,7 @@ public class Job<R> {
 	@Getter
 	@Id private String id;
 	private final Core<R> core;
+	@Getter
 	private State state;
 
 	public Job(Input<R> input) {
@@ -64,7 +65,7 @@ public class Job<R> {
 		Core<R> core();
 	}
 
-	enum State {
+	public enum State {
 		RUNNING, PAUSED, DONE, CANCELLED, STOPPED, QUEUED
 	}
 
