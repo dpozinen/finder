@@ -1,6 +1,6 @@
 package finder;
 
-import finder.core.concurrent.Pause;
+import finder.api.concurrent.Pause;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class ConcurrencyTest {
 
 		try {
 			log.info("starting jobs");
-			for (Runnable callable : runnables) pausePool.execute(callable);
+			for (Runnable runnable : runnables) pausePool.execute(runnable);
 			pause.pause();
 			Thread.sleep(10_000);
 			pause.resume();
