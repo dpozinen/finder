@@ -9,31 +9,26 @@ import java.util.Optional;
 @RedisHash("Job")
 public class Job<R> {
 
-	@Getter
-	@Id private String id;
+	@Id @Getter
+	private String id;
 	private final Core<R> core;
 	@Getter
-	private State state;
+	private State state = State.QUEUED;
 
 	public Job(Input<R> input) {
 		core = input.core();
 	}
 
 	public Optional<R> results() {
-		return state.equals(State.RUNNING) ? Optional.empty() : Optional.ofNullable(core.results());
+		return Optional.ofNullable(core.results());
 	}
 
 	public boolean pause() {
-		return changeStateIf(State.RUNNING, core::pause, State.PAUSED);
+		return ifRunning(core::pause, State.PAUSED);
 	}
 
 	public boolean stop() {
-		return changeStateIf(State.RUNNING, core::stop, State.STOPPED);
-	}
-
-	public boolean resume() {
-		State change = State.RUNNING;
-		return changeStateIf(State.PAUSED, core::run, change) || changeStateIf(State.STOPPED, core::run, change);
+		return ifRunning(core::stop, State.STOPPED);
 	}
 
 	public boolean cancel() {
@@ -42,18 +37,16 @@ public class Job<R> {
 		return true;
 	}
 
-	public boolean run() {
-		if (state.equals(State.QUEUED)) {
+	public void run() {
+		if (state.equals(State.QUEUED) || state.equals(State.PAUSED) || state.equals(State.STOPPED)) {
 			state = State.RUNNING;
 			core.run();
 			state = State.DONE;
-			return true;
 		}
-		return false;
 	}
 
-	private boolean changeStateIf(State toCheck, Runnable action, State change) {
-		boolean equal = this.state.equals(toCheck);
+	private boolean ifRunning(Runnable action, State change) {
+		boolean equal = this.state.equals(State.RUNNING);
 		if (equal) {
 			action.run();
 			this.state = change;
