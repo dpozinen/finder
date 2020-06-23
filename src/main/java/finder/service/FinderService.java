@@ -4,6 +4,7 @@ import finder.api.Job;
 import finder.core.Finder;
 import finder.core.Page;
 import finder.repo.JobRepo;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -21,8 +22,11 @@ public class FinderService {
 	private final ConcurrentHashMap<String, Future<?>> jobFutures = new ConcurrentHashMap<>(8, 0.9f, 2);
 	private final ExecutorService jobPool = Executors.newFixedThreadPool(4);
 
-	public FinderService(JobRepo jobRepo) {
+	private final finder.redis.Publisher messagePublisher;
+
+	public FinderService(JobRepo jobRepo, finder.redis.Publisher messagePublisher) {
 		this.jobRepo = jobRepo;
+		this.messagePublisher = messagePublisher;
 	}
 
 	public Optional<Job.State> state(String id) {
@@ -52,8 +56,8 @@ public class FinderService {
 			String startingUrl = form.get("startingUrl");
 			String searchStr = form.get("search");
 
-			var finderInput = new Finder.Input(searchStr, startingUrl, maxUrls, maxThreads);
-			var job = new Job<>(finderInput);
+			var input = new Finder.Input(searchStr, startingUrl, maxUrls, maxThreads, messagePublisher);
+			var job = new Job<>(input);
 			jobRepo.save(job);
 			jobs.put(job.getId(), job);
 			return job.getId();
@@ -82,7 +86,10 @@ public class FinderService {
 
 	public boolean cancel(String id) {
 		var job = jobs.get(id);
-		if (job != null) return job.cancel();
+		if (job != null) {
+			jobFutures.get(job.getId()).cancel(true);
+			return job.cancel();
+		}
 		return false;
 	}
 

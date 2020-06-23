@@ -1,6 +1,7 @@
 package finder.api;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
@@ -9,7 +10,7 @@ import java.util.Optional;
 @RedisHash("Job")
 public class Job<R> {
 
-	@Id @Getter
+	@Id @Getter @Setter
 	private String id;
 	private final Core<R> core;
 	@Getter
